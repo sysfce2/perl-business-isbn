@@ -176,7 +176,7 @@ processors).
 
 =item 2. remove vertical whitespace from the beginning and end of the string
 
-=item 3. remove dash (U+002D) and dash-type characters (U+2010 to U+2015)
+=item 3. remove dash (U+002D) and dash-type characters (U+2010 to U+2015, and U+2212)
 
 =back
 
@@ -202,12 +202,11 @@ But, 3.016 will do this for you with with the C<strict> option:
 sub normalize_isbn_string {
 	my($string) = @_;
 
-
-	$string =~ s/[\t\x{180E}\p{Space_Separator}]//g;
+	$string =~ s/   [\t\x{180E}\p{Space_Separator}]        //xg;
 	$string =~ s/\A [\x0A-\x0D\x{0085}\x{2028}\x{2029}]+   //x;
 	$string =~ s/   [\x0A-\x0D\x{0085}\x{2028}\x{2029}]+ \z//x;
 
-	$string =~ s/[\x{2010}-\x{2015}-]//g;
+	$string =~ s/[\x{2010}-\x{2015}\x{2212}-]//g;
 	$string = uc($string);
 
 	return $string =~ /\A ([0-9]{3})? [0-9]{9} [0-9X] \z/x ? $string : ()

@@ -33,7 +33,7 @@ my @table = (
 		substr $input, 2, 0, $c;
 
 		[ $input, $expected, sprintf "U+%04X stripped", hex($_) ]
-		} ( '2D', 2010 .. 2015 )
+		} ( '2D', 2010 .. 2015, 2212 )
 	);
 
 foreach my $row ( @table ) {
@@ -41,6 +41,7 @@ foreach my $row ( @table ) {
 	subtest "<$input>" => sub {
 		is( $code_ref->($input), $expected, $label );
 		return unless defined $expected;
+
 		my $isbn_legacy = $class->new( $input );
 		isa_ok $isbn_legacy, $class;
 		my $isbn_strict = $class->new( $input, { strict => 1 } );
