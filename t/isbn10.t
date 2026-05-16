@@ -2,7 +2,10 @@ use strict;
 
 use Test::More 'no_plan';
 
-use Business::ISBN qw(:all);
+my $class = 'Business::ISBN';
+my $class_10 = $class . '10';
+my $class_13 = $class . '13';
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 my $GOOD_ISBN          = "0596527241";
@@ -30,154 +33,164 @@ my $NO_GOOD_CHAR_ISBN  = "abcdefghij";
 
 my $SHORT_ISBN         = "156592";
 
+subtest 'sanity' => sub {
+	use_ok $class;
+	can_ok $class, qw(new as_isbn13 as_isbn10);
+	};
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# test to see if we can construct an object?
-my $isbn = Business::ISBN->new( $GOOD_ISBN );
-isa_ok( $isbn, 'Business::ISBN10' );
-is( $isbn->is_valid,       GOOD_ISBN, "$GOOD_ISBN is valid" );
+subtest 'new' => sub {
+	my $isbn = $class->new( $GOOD_ISBN );
+	isa_ok $isbn, $class;
+	isa_ok $isbn, $class_10;
 
-is( $isbn->type,           'ISBN10',          "$GOOD_ISBN has right type");
+	is $isbn->is_valid,       $class->GOOD_ISBN, "$GOOD_ISBN is valid";
 
-is( $isbn->prefix,         '',                "$GOOD_ISBN has right prefix");
-is( $isbn->publisher_code, $PUBLISHER,        "$GOOD_ISBN has right publisher");
-is( $isbn->group_code,     $GROUP_CODE,       "$GOOD_ISBN has right country code");
-like( $isbn->group,        qr/\Q$GROUP/,      "$GOOD_ISBN has right country");
-is( $isbn->as_string,      $GOOD_ISBN_STRING, "$GOOD_ISBN stringifies correctly");
-is( $isbn->as_string([]),  $GOOD_ISBN,        "$GOOD_ISBN stringifies correctly");
+	is $isbn->type,           'ISBN10',          "$GOOD_ISBN has right type";
 
-is( $isbn->as_string([]),  $isbn->common_data, "$GOOD_ISBN stringifies correctly");
+	is $isbn->prefix,         '',                "$GOOD_ISBN has right prefix";
+	is $isbn->publisher_code, $PUBLISHER,        "$GOOD_ISBN has right publisher";
+	is $isbn->group_code,     $GROUP_CODE,       "$GOOD_ISBN has right country code";
+	like $isbn->group,        qr/\Q$GROUP/,      "$GOOD_ISBN has right country";
+	is $isbn->as_string,      $GOOD_ISBN_STRING, "$GOOD_ISBN stringifies correctly";
+	is $isbn->as_string([]),  $GOOD_ISBN,        "$GOOD_ISBN stringifies correctly";
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# can I clone it?
-{
-my $clone = $isbn->as_isbn10;
+	is $isbn->as_string([]),  $isbn->common_data, "$GOOD_ISBN stringifies correctly";
+	};
 
-isa_ok( $clone, 'Business::ISBN10' );
-is( $clone->is_valid,       GOOD_ISBN, "$GOOD_ISBN is valid" );
+subtest 'clone' => sub {
+	my $isbn = $class->new( $GOOD_ISBN );
+	isa_ok $isbn, $class;
+	isa_ok $isbn, $class_10;
 
-is( $clone->publisher_code, $PUBLISHER,        "$GOOD_ISBN has right publisher");
-is( $clone->group_code,     $GROUP_CODE,       "$GOOD_ISBN has right country code");
-like( $clone->group,        qr/\Q$GROUP/,      "$GOOD_ISBN has right country");
-is( $clone->as_string,      $GOOD_ISBN_STRING, "$GOOD_ISBN stringifies correctly");
-is( $clone->as_string([]),  $GOOD_ISBN,        "$GOOD_ISBN stringifies correctly");
-}
+	my $clone = $isbn->as_isbn10;
+	isa_ok $clone, $class_10;
+	is $clone->is_valid,       $class->GOOD_ISBN, "$GOOD_ISBN is valid";
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# can I make it ISBN13?
-{
-my $clone = $isbn->as_isbn13;
+	is $clone->publisher_code, $PUBLISHER,        "$GOOD_ISBN has right publisher";
+	is $clone->group_code,     $GROUP_CODE,       "$GOOD_ISBN has right country code";
+	like $clone->group,        qr/\Q$GROUP/,      "$GOOD_ISBN has right country";
+	is $clone->as_string,      $GOOD_ISBN_STRING, "$GOOD_ISBN stringifies correctly";
+	is $clone->as_string([]),  $GOOD_ISBN,        "$GOOD_ISBN stringifies correctly";
+	};
 
-isa_ok( $clone, 'Business::ISBN13' );
-is( $clone->is_valid,       GOOD_ISBN, "$GOOD_ISBN is valid" );
+subtest 'isbn13' => sub {
+	my $isbn = $class->new( $GOOD_ISBN );
+	isa_ok $isbn, $class;
+	isa_ok $isbn, $class_10;
 
-is( $clone->type,           'ISBN13',          "$GOOD_ISBN has right type");
-is( $clone->prefix,         $PREFIX,           "$GOOD_ISBN has right prefix");
-is( $clone->publisher_code, $PUBLISHER,        "$GOOD_ISBN has right publisher");
-is( $clone->group_code,     $GROUP_CODE,       "$GOOD_ISBN has right country code");
-like( $clone->group,        qr/\Q$GROUP/,      "$GOOD_ISBN has right country");
-is( $clone->as_string,      $GOOD_EAN_STRING,  "$GOOD_ISBN stringifies correctly");
-is( $clone->as_string([]),  $GOOD_EAN,         "$GOOD_ISBN stringifies correctly");
-}
+	my $isbn13 = $isbn->as_isbn13;
+	isa_ok $isbn13, $class;
+	isa_ok $isbn13, $class_13;
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# and bad checksums?
-$isbn = Business::ISBN->new( $BAD_CHECKSUM_ISBN );
-isa_ok( $isbn, 'Business::ISBN10' );
-is( $isbn->error, BAD_CHECKSUM, 
-	"Bad checksum [$BAD_CHECKSUM_ISBN] is invalid" );
-is( $isbn->input_isbn, $BAD_CHECKSUM_ISBN, "Bad ISBN is in input_data" );
+	is $isbn13->is_valid,       $class->GOOD_ISBN, "$GOOD_ISBN is valid";
 
-#after this we should have a good ISBN
-$isbn->fix_checksum;
-ok( $isbn->is_valid, 
-	"Bad checksum [$BAD_CHECKSUM_ISBN] had checksum fixed" );
-is( $isbn->input_isbn, $BAD_CHECKSUM_ISBN, "Bad ISBN is still in input_data" );
+	is $isbn13->type,           'ISBN13',          "$GOOD_ISBN has right type";
+	is $isbn13->prefix,         $PREFIX,           "$GOOD_ISBN has right prefix";
+	is $isbn13->publisher_code, $PUBLISHER,        "$GOOD_ISBN has right publisher";
+	is $isbn13->group_code,     $GROUP_CODE,       "$GOOD_ISBN has right country code";
+	like $isbn13->group,        qr/\Q$GROUP/,      "$GOOD_ISBN has right country";
+	is $isbn13->as_string,      $GOOD_EAN_STRING,  "$GOOD_ISBN stringifies correctly";
+	is $isbn13->as_string([]),  $GOOD_EAN,         "$GOOD_ISBN stringifies correctly";
+	};
 
-# bad country code?
-$isbn = Business::ISBN->new( $BAD_GROUP_ISBN );
-isa_ok( $isbn, 'Business::ISBN10' );
-is( $isbn->error, INVALID_GROUP_CODE, 
-	"Bad group code [$BAD_GROUP_ISBN] is invalid" );
+subtest 'bad checksums' => sub {
+	my $isbn = $class->new( $BAD_CHECKSUM_ISBN );
+	isa_ok $isbn, $class;
+	isa_ok $isbn, $class_10;
 
-# bad publisher code?
-$isbn = Business::ISBN->new( $BAD_PUBLISHER_ISBN );
-isa_ok( $isbn, 'Business::ISBN10' );
-is( $isbn->error, INVALID_PUBLISHER_CODE, 
-	"Bad publisher [$BAD_PUBLISHER_ISBN] is invalid" );
+	is $isbn->error, $class->BAD_CHECKSUM, "Bad checksum [$BAD_CHECKSUM_ISBN] is invalid";
+	is $isbn->input_isbn, $BAD_CHECKSUM_ISBN, "Bad ISBN is in input_data";
 
-# convert to EAN?
-$isbn = Business::ISBN->new( $GOOD_ISBN );
-is( $isbn->as_isbn13->as_string([]), $GOOD_EAN, "$GOOD_ISBN converted to EAN" );
+	#after this we should have a good ISBN
+	$isbn->fix_checksum;
+	ok $isbn->is_valid, "Bad checksum [$BAD_CHECKSUM_ISBN] had checksum fixed";
+	is $isbn->input_isbn, $BAD_CHECKSUM_ISBN, "Bad ISBN is still in input_data";
+	};
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Am I prevented from doing bad things?
+subtest 'bad country code' => sub {
+	my $isbn = $class->new( $BAD_GROUP_ISBN );
+	isa_ok $isbn, $class_10;
+	is $isbn->error, $class->INVALID_GROUP_CODE, "Bad group code [$BAD_GROUP_ISBN] is invalid";
+	};
 
-my $result = eval { $isbn->_set_prefix( '978' ) };
-ok( defined $@, "Setting prefix on ISBN-10 fails" );
+subtest 'bad publisher code' => sub {
+	my $isbn = $class->new( $BAD_PUBLISHER_ISBN );
+	isa_ok $isbn, $class_10;
+	is $isbn->error, $class->INVALID_PUBLISHER_CODE, "Bad publisher [$BAD_PUBLISHER_ISBN] is invalid";
+	};
+
+subtest 'convert to EAN' => sub {
+	my $isbn = $class->new( $GOOD_ISBN );
+	is $isbn->as_isbn13->as_string([]), $GOOD_EAN, "$GOOD_ISBN converted to EAN";
+	};
+
+subtest 'prevent bad things' => sub {
+	my $isbn = $class->new( $GOOD_ISBN );
+	my $result = eval { $isbn->_set_prefix( '978' ) };
+	ok defined $@, "Setting prefix on ISBN-10 fails";
+	};
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # parse a bunch of good ones
-SKIP:
-	{
+SKIP: {
 	my $file = "isbns.txt";
 
-	open FILE, $file or 
+	open my $fh, $file or
 		skip( "Could not read $file: $!", 1, "Need $file");
 
 	diag "\nChecking ISBNs... (this may take a bit)";
-	
+
 	my $bad = 0;
-	while( <FILE> )
-		{
+	while( <$fh> ) {
 		chomp;
-		my $isbn = Business::ISBN->new( $_ );
-		
+		my $isbn = $class->new( $_ );
+
 		my $result = $isbn->is_valid;
+		no warnings qw(once);
 		my $text   = $Business::ISBN::ERROR_TEXT{ $result };
-		
-		$bad++ unless $result eq Business::ISBN::GOOD_ISBN;
-		diag "\n\t$_ is not valid? [ $result -> $text ]" 
-			unless $result eq Business::ISBN::GOOD_ISBN;	
+
+		$bad++ unless $result eq $class->GOOD_ISBN;
+		diag "\n\t$_ is not valid? [ $result -> $text ]"
+			unless $result eq $class->GOOD_ISBN;
 		}
-	
+
 	close FILE;
-	
-	ok( $bad == 0, "Match good ISBNs" );
+
+	ok $bad == 0, "Match good ISBNs";
 	}
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # fail on a bunch of bad ones
-SKIP:
-	{
+SKIP: {
 	my $file = "bad-isbns.txt";
 
-	open FILE, $file or 
-		skip( "Could not read $file: $!", 1, "Need $file");
+	open my $fh, $file or
+		skip( "Could not read $file: $!", 1, "Need $file" );
 
 	diag "\nChecking bad ISBNs... (this should be fast)";
-	
+
 	my $good = 0;
 	my @good = ();
-	
-	while( <FILE> )
-		{
+
+	while( <$fh> ) {
 		chomp;
-		my $valid = eval { Business::ISBN->new( $_ )->is_valid };
+		my $valid = eval { $class->new( $_ )->is_valid };
 		next unless $valid;
-		
+
 		push @good, $_;
-		
-		$good++;	
+
+		$good++;
 		}
-	
+
 	close FILE;
 
 	{
 	local $" = "\n\t";
-	ok( $good == 0, "Don't match bad ISBNs" ) || 
+	ok( $good == 0, "Don't match bad ISBNs" ) ||
 		diag( "\nMatched $good bad ISBNs\n\t@good" );
 	}
-	
+
 	}
+
+done_testing();
