@@ -119,6 +119,7 @@ BEGIN {
 		BAD_CHECKSUM GOOD_ISBN BAD_ISBN ARTICLE_CODE_OUT_OF_RANGE
 		INVALID_PREFIX
 		%ERROR_TEXT
+		normalize_isbn_string
 		valid_isbn_checksum
 		);
 
@@ -154,6 +155,40 @@ use Business::ISBN13;
 
 =over 4
 
+=item normalize_isbn_string( STRING )
+
+This module converts inputs strings to a useable format, as detailed in
+C<new>. That conversion is very forgiving, but by removing everything that
+does not belong, the remaining parts of the string might accidentally look
+like an ISBN.
+
+The C<normalize_isbn_string> function is much more targeted. It removes all
+horizontal whitespace, any form of dash, and uppercases the result. If the
+result looks like the format of an ISBN-10 or ISBN-13, it returns the
+string. Otherwise, it returns the empty list.
+
+You could use this as a filter to catch bad input since C<new> is too forgiving:
+
+	use Business::ISBN qw(normalize_isbn_string);
+
+	while( my $candidate = <> ) {
+		next unless $candidate = normlize_isbn_string($candidate);
+
+		my $isbn = Business::ISBN->new($candidate);
+		...
+		}
+
+=cut
+
+sub normalize_isbn_string {
+	my($string) = @_;
+
+	$string =~ s/\h+//g;
+	$string =~ s/\p{Dash}//g;
+	$string = uc($string);
+
+	return $string =~ /\A ([0-9]{3})? [0-9]{9} [0-9X] \z/x ? $string : ()
+	}
 =item valid_isbn_checksum( ISBN10 | ISBN13 )
 
 This function is exportable on demand, and works for either 10
@@ -189,22 +224,61 @@ sub valid_isbn_checksum {
 
 =item new($isbn)
 
-The constructor accepts a scalar representing the ISBN.
+The constructor accepts a scalar representing the ISBN, and an optional
+options hash reference (new in 3.016).
 
-The string representing the ISBN may contain characters other than
-C<[0-9xX]>, although these will be removed in the internal
-representation.  The resulting string must look like an ISBN - the
-first nine characters must be digits and the tenth character must be a
-digit, 'x', or 'X'.
+Prior to 3.016, C<new> would fix up it argument by removing anything that wasn't
+an ASCII digit or an C<X>. However, that can accidentally make a string that isn't
+an ISBN into one after all the other characters are removed (e.g. C<123456789ABCD...XYZ>).
 
-The constructor attempts to determine the group code and the publisher
-code.  If these data cannot be determined, the constructor sets C<<
-$obj->error >> to something other than C<GOOD_ISBN>. An object is
-still returned and it is up to the program to check the C<< error >> method
-for one of five values or one of the C<< error_* >> methods to check for
-a particular error. The actual
-values of these symbolic versions are the same as those from previous
-versions of this module which used literal values:
+	use Business::ISBN;
+
+	my $isbn = Business::ISBN->new($input_string);
+	unless( defined $isbn ) {
+		... handle error ...
+		}
+
+With 3.016, C<new> can take an optional hash reference as a second argument.
+Set the hash key C<strict> to true to use a more restrictive way to prepare
+the string. The stricter method uses C<normalize_isbn_string>, which only strips
+whitespace and dashes. Any extra letters will remain, causing C<new> to fail:
+
+	use Business::ISBN 3.016;
+	my $isbn = Business::ISBN->new($input_string, { strict => 1 });
+	unless( defined $isbn ) {
+		... handle error ...
+		}
+
+If that's not good enough for you, 3.016 also lets you use your own code reference
+to decide how to handle the string-to-ISBN conversion. Use the C<code_ref> option;
+the code ref should return nothing (the empty list) if you cannot make the string
+into an ISBN (even if not a valid one), or the candidate ISBN string, which still
+might fail validation:
+
+	use Business::ISBN 3.016;
+
+	my $code_ref = sub {
+		my $input = shift;
+		my $candidate = ...;
+		return $candidate;
+		};
+
+	my $isbn = Business::ISBN->new($input_string, { code_ref => $code_ref });
+	unless( defined $isbn ) {
+		... handle error ...
+		}
+
+No matter which method you choose (legacy, strict, or custom), the result should
+match C<(?:[0-9]{3})?[0-9]{9}[0-9X]>. If it does not, the parsing will still fail.
+
+
+The parsing uses L<Business::ISBN::Data> to determine the group code and the publisher
+code. If these data cannot be determined, it sets C<<
+$obj->error >> to something other than C<GOOD_ISBN>. An object is still
+returned and it is up to the program to check the C<< error >> method for
+one of five values or one of the C<< error_* >> methods to check for a
+particular error. The actual values of these symbolic versions are the same
+as those from previous versions of this module which used literal values:
 
 
 	Business::ISBN::INVALID_PUBLISHER_CODE
@@ -234,7 +308,7 @@ exportable on demand.
 
 If the constructor decides it cannot create an object, it returns
 C<undef>.  It may do this if the string passed as the ISBN cannot be
-munged to the internal format meaning that it does not even come close
+munged to the internal format, meaning that it does not even come close
 to looking like an ISBN.
 
 =cut
@@ -244,7 +318,19 @@ to looking like an ISBN.
 sub new {
 	my $class       = shift;
 	my $input_data  = shift;
-	my $common_data = _common_format $input_data;
+
+	# since this adds a new feature to code that has existed for
+	# decades, I want this to ignore goofy situations that might
+	# be out there. new() never used the third argument, but didn't
+	# forbid it either.
+	my $opts = ( @_ > 0 and ref $_[0] eq ref {} ) ? shift : {};
+
+	unless( defined $opts->{'code_ref'} and ref $opts->{'code_ref'} eq ref sub {} ) {
+		my $method_name = $opts->{'strict'} ? 'normalize_isbn_string' : '_common_format';
+		$opts->{'code_ref'} = $class->can($method_name);
+		}
+
+	my $common_data = $opts->{'code_ref'}->($input_data);
 
 	return unless $common_data;
 
@@ -728,7 +814,7 @@ sub _common_format {
 				\d{9}[0-9X]
 			)
 	        \z	             #anchor at end
-	                  /x;
+		/x;
 
 	return;
 	}
