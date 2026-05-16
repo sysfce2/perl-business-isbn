@@ -128,67 +128,66 @@ subtest 'prevent bad things' => sub {
 	ok defined $@, "Setting prefix on ISBN-10 fails";
 	};
 
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# parse a bunch of good ones
-SKIP: {
+subtest 'good ISBNs' => sub {
 	my $file = "isbns.txt";
 
-	open my $fh, $file or
-		skip( "Could not read $file: $!", 1, "Need $file");
-
+	open my $fh, $file or do {
+		diag "Could not read <$file>: $!";
+		fail();
+		return;
+		};
 	diag "\nChecking ISBNs... (this may take a bit)";
 
-	my $bad = 0;
+	my $legacy_bad = 0;
+	my $strict_bad = 0;
 	while( <$fh> ) {
 		chomp;
-		my $isbn = $class->new( $_ );
+		my $isbn_legacy = $class->new($_);
+		unless( defined $isbn_legacy and $isbn_legacy->is_valid ) {
+			diag "Good ISBN <$_> was not valid in legacy rules";
+			$legacy_bad++ unless $isbn_legacy->is_valid;
+			}
 
-		my $result = $isbn->is_valid;
-		no warnings qw(once);
-		my $text   = $Business::ISBN::ERROR_TEXT{ $result };
-
-		$bad++ unless $result eq $class->GOOD_ISBN;
-		diag "\n\t$_ is not valid? [ $result -> $text ]"
-			unless $result eq $class->GOOD_ISBN;
+		my $isbn_strict = $class->new($_, {strict=>1});
+		unless( defined $isbn_strict and $isbn_strict->is_valid ) {
+			diag "Good ISBN <$_> was not valid in strict rules";
+			$strict_bad++ unless $isbn_strict->is_valid;
+			}
 		}
 
-	close FILE;
+	ok $legacy_bad == 0, "Match good ISBNs with legacy rules";
+	ok $strict_bad == 0, "Match good ISBNs with strict rules";
+	};
 
-	ok $bad == 0, "Match good ISBNs";
-	}
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# fail on a bunch of bad ones
-SKIP: {
+subtest 'bad ISBNs' => sub {
 	my $file = "bad-isbns.txt";
 
-	open my $fh, $file or
-		skip( "Could not read $file: $!", 1, "Need $file" );
-
+	open my $fh, $file or do {
+		diag "Could not read <$file>: $!";
+		fail();
+		return;
+		};
 	diag "\nChecking bad ISBNs... (this should be fast)";
 
-	my $good = 0;
-	my @good = ();
-
+	my $legacy_good = 0;
+	my $strict_good = 0;
 	while( <$fh> ) {
 		chomp;
-		my $valid = eval { $class->new( $_ )->is_valid };
-		next unless $valid;
+		my $isbn_legacy = $class->new($_);
+		if( defined $isbn_legacy and $isbn_legacy->is_valid ) {
+			diag "Bad ISBN <$_> was valid in legacy rules";
+			$legacy_good++ unless $isbn_legacy->is_valid;
+			}
 
-		push @good, $_;
-
-		$good++;
+		my $isbn_strict = $class->new($_, {strict=>1});
+		if( defined $isbn_legacy and $isbn_strict->is_valid ) {
+			diag "Bad ISBN <$_> was valid in strict rules";
+			$strict_good++ unless $isbn_strict->is_valid;
+			}
 		}
 
-	close FILE;
-
-	{
-	local $" = "\n\t";
-	ok( $good == 0, "Don't match bad ISBNs" ) ||
-		diag( "\nMatched $good bad ISBNs\n\t@good" );
-	}
-
-	}
+	ok $legacy_good == 0, "Match bad ISBNs with legacy rules";
+	ok $strict_good == 0, "Match bad ISBNs with strict rules";
+	};
 
 done_testing();
