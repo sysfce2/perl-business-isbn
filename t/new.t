@@ -52,7 +52,6 @@ subtest 'new' => sub {
 				isa_ok $isbn, $class;
 				can_ok $isbn, qw(is_valid) or return;
 				is !! $isbn->is_valid, !! $is_valid, 'matches expected validity';
-				diag $isbn->error_text;
 				}
 			else {
 				is $isbn, $return, 'bad argument returns undef';
