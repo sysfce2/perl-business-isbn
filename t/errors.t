@@ -5,7 +5,7 @@ my $class = 'Business::ISBN';
 use_ok( $class ) or BAIL_OUT( "$class did not compile" );
 can_ok( $class, qw( error_text error ) );
 
-subtest bad_group => sub {
+subtest 'bad_group' => sub {
 	can_ok( $class, qw(error_is_bad_group error_text error) );
 	# blake and taylor fake ISBNs for their DVDs
 	my @bad_isbns = qw(9786106294241 6106294247);
@@ -27,7 +27,7 @@ subtest bad_group => sub {
 		}
 	};
 
-subtest bad_publisher => sub {
+subtest 'bad_publisher' => sub {
 	can_ok( $class, qw(error_is_bad_publisher) );
 
 	my @bad_isbns = qw(9656123456);
@@ -40,6 +40,5 @@ subtest bad_publisher => sub {
 		ok( $isbn->error_is_bad_publisher, "ISBN $try has a bad publisher" );
 		}
 	};
-
 
 done_testing();

@@ -3,7 +3,6 @@ use strict;
 
 use Test::More;
 
-
 my @classes = map { "Business::ISBN$_" } '',  '10', '13';
 
 my @methods = qw(
