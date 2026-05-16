@@ -6,8 +6,6 @@ my $class = 'Business::ISBN';
 my $class_10 = $class . '10';
 my $class_13 = $class . '13';
 
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 my $GOOD_ISBN          = "0596527241";
 my $GOOD_ISBN_STRING   = "0-596-52724-1";
 
