@@ -824,8 +824,9 @@ sub _set_type {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # internal methods.  you don't get to use this one.
 sub _common_format {
-	#we want uppercase X's
-	my $data = uc shift;
+	no warnings qw(uninitialized);
+
+	my $data = uc shift; # we want uppercase X's
 
 	#get rid of everything except decimal digits and X
 	$data =~ s/[^0-9X]//g;
