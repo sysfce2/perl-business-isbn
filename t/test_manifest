@@ -5,6 +5,7 @@ constants.t
 interface.t
 normalize_isbn_string.t
 new.t
+normalizers.t
 albania.t
 isbn10.t
 isbn13.t
