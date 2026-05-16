@@ -209,7 +209,7 @@ sub normalize_isbn_string {
 	$string =~ s/[\x{2010}-\x{2015}\x{2212}-]//g;
 	$string = uc($string);
 
-	return $string =~ /\A ([0-9]{3})? [0-9]{9} [0-9X] \z/x ? $string : ()
+	return $string;
 	}
 
 =item valid_isbn_checksum( ISBN10 | ISBN13 )
@@ -339,23 +339,24 @@ to looking like an ISBN.
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 sub new {
-	my $class       = shift;
-	my $input_data  = shift;
+	my( $class, $input_data, $opts ) = @_;
 
 	# since this adds a new feature to code that has existed for
 	# decades, I want this to ignore goofy situations that might
 	# be out there. new() never used the third argument, but didn't
 	# forbid it either.
-	my $opts = ( @_ > 0 and ref $_[0] eq ref {} ) ? shift : {};
+	$opts = {} unless defined $opts;
+	$opts->{'strict'} = 0 unless defined $opts->{'strict'};
 
-	unless( defined $opts->{'code_ref'} and ref $opts->{'code_ref'} eq ref sub {} ) {
+	unless( defined $opts->{'normalizer'} and ref $opts->{'normalizer'} eq ref sub {} ) {
 		my $method_name = $opts->{'strict'} ? 'normalize_isbn_string' : '_common_format';
-		$opts->{'code_ref'} = $class->can($method_name);
+		$opts->{'normalizer'} = $class->can($method_name);
 		}
 
-	my $common_data = $opts->{'code_ref'}->($input_data);
+	my $common_data = $opts->{'normalizer'}->($input_data);
+	$common_data = '' unless defined $common_data;
 
-	return unless $common_data;
+	return unless $common_data =~ /\A ([0-9]{3})? [0-9]{9} [0-9X] \z/x;
 
 	my $self = {
 		input_isbn  => $input_data,
@@ -825,22 +826,9 @@ sub _set_type {
 # # internal methods.  you don't get to use this one.
 sub _common_format {
 	no warnings qw(uninitialized);
-
 	my $data = uc shift; # we want uppercase X's
-
-	#get rid of everything except decimal digits and X
 	$data =~ s/[^0-9X]//g;
-
-	return $1 if $data =~ m/
-	        \A   	         #anchor at start
-	        (
-	        	(?:\d\d\d)?
-				\d{9}[0-9X]
-			)
-	        \z	             #anchor at end
-		/x;
-
-	return;
+	return $data;
 	}
 
 sub _init {

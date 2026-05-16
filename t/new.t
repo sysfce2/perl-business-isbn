@@ -34,7 +34,7 @@ subtest 'new' => sub {
 		[ [q(13456789X),                                {}            ],    0,       undef,  0,        undef,      qr//,       'not enough chars empty hashref' ],
 		[ [q(13456789X),                                {strict => 1} ],    0,       undef,  0,        undef,      qr//,       'not enough chars, strict'       ],
 
-		[ [q(0b2c3d4e5f6g7h8i9kX)                                     ],    1,       undef,  0,        undef,      qr//,       'accidental ISBN, strict'        ],
+		[ [q(0b2c3d4e5f6g7h8i9kX)                                     ],    1,       undef,  0,        undef,      qr//,       'accidental ISBN, legacy'        ],
 		[ [q(0b2c3d4e5f6g7h8i9kX),                      {strict => 1} ],    0,       undef,  0,        undef,      qr//,       'accidental ISBN, strict'        ],
 
 		[ [q(  0 2345 6789X  )                                        ],    1,       undef,  0,        undef,      qr//,       'whitespace, legacy'             ],
@@ -54,7 +54,7 @@ subtest 'new' => sub {
 				is !! $isbn->is_valid, !! $is_valid, 'matches expected validity';
 				}
 			else {
-				is $isbn, $return, 'bad argument returns undef';
+				is $isbn, $return, 'bad argument returns undef' or diag explain $isbn;
 				}
 			};
 		}

@@ -18,12 +18,12 @@ subtest 'sanity' => sub {
 	};
 
 my @table = (
-	[ '',           undef, 'enpty string returns undef'     ],
-	[ '123',        undef, 'too few chars returns undef'    ],
-	[ '123456789A', undef, 'disallowed chars returns undef' ],
+	[ '',           '',           0, 'enpty string'     ],
+	[ '123',        '123',        0, 'too few chars'    ],
+	[ '123456789A', '123456789A', 0, 'disallowed chars' ],
 
-	[ ' 123456789X ',             '123456789X', 'spaces stripped' ],
-	[ "\r\r\r\n123456789X\n\n\n", '123456789X', 'vertical space stripped' ],
+	[ ' 123456789X ',             '123456789X', 1, 'spaces stripped' ],
+	[ "\r\r\r\n123456789X\n\n\n", '123456789X', 1, 'vertical space stripped' ],
 
 	map {
 		my $c = chr(hex($_));
@@ -37,13 +37,14 @@ my @table = (
 	);
 
 foreach my $row ( @table ) {
-	my( $input, $expected, $label ) = @$row;
+	my( $input, $expected, $should_succeed, $label ) = @$row;
 	subtest "<$input>" => sub {
-		is( $code_ref->($input), $expected, $label );
-		return unless defined $expected;
+		is $code_ref->($input), $expected, $label;
+		return unless $should_succeed;
 
 		my $isbn_legacy = $class->new( $input );
 		isa_ok $isbn_legacy, $class;
+
 		my $isbn_strict = $class->new( $input, { strict => 1 } );
 		isa_ok $isbn_strict, $class;
 		};
