@@ -336,8 +336,6 @@ to looking like an ISBN.
 
 =cut
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 sub new {
 	my( $class, $input_data, $opts ) = @_;
 
