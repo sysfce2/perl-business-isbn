@@ -3,6 +3,7 @@ pod.t
 pod_coverage.t
 constants.t
 interface.t
+normalize_isbn_string.t
 new.t
 albania.t
 isbn10.t

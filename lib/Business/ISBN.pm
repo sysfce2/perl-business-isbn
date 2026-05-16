@@ -157,15 +157,31 @@ use Business::ISBN13;
 
 =item normalize_isbn_string( STRING )
 
-This module converts inputs strings to a useable format, as detailed in
-C<new>. That conversion is very forgiving, but by removing everything that
-does not belong, the remaining parts of the string might accidentally look
-like an ISBN.
+This differs from the module default transformation which removes all
+characters that can't be part of a valid ISBN. This does a targeted
+transformation that removes fewer types of characters to a string such as
+C<123456789ABC...XYZ> doesn't accidentally look like the ISBN
+C<123456789X>.
 
-The C<normalize_isbn_string> function is much more targeted. It removes all
-horizontal whitespace, any form of dash, and uppercases the result. If the
-result looks like the format of an ISBN-10 or ISBN-13, it returns the
-string. Otherwise, it returns the empty list.
+The C<normalize_isbn_string> function is much more targeted. It strips out
+the characters that might be there accidentally from a data import or
+export problem (the main reason this module was created). This include
+horizontal whitespace within the string, vertical whitespace around the
+string, and various forms of dashes (e.g. from too-helpful word
+processors).
+
+=over 4
+
+=item 1. remove all horizontal space
+
+=item 2. remove vertical whitespace from the beginning and end of the string
+
+=item 3. remove dash (U+002D) and dash-type characters (U+2010 to U+2015)
+
+=back
+
+If the result looks like the format of an ISBN-10 or ISBN-13, it returns
+the string. Otherwise, it returns the empty list.
 
 You could use this as a filter to catch bad input since C<new> is too forgiving:
 
@@ -173,22 +189,30 @@ You could use this as a filter to catch bad input since C<new> is too forgiving:
 
 	while( my $candidate = <> ) {
 		next unless $candidate = normlize_isbn_string($candidate);
-
 		my $isbn = Business::ISBN->new($candidate);
 		...
 		}
+
+But, 3.016 will do this for you with with the C<strict> option:
+
+	my $isbn = Business::ISBN->new( $candidate, { strict => 1 } );
 
 =cut
 
 sub normalize_isbn_string {
 	my($string) = @_;
 
-	$string =~ s/\h+//g;
-	$string =~ s/\p{Dash}//g;
+
+	$string =~ s/[\t\x{180E}\p{Space_Separator}]//g;
+	$string =~ s/\A [\x0A-\x0D\x{0085}\x{2028}\x{2029}]+   //x;
+	$string =~ s/   [\x0A-\x0D\x{0085}\x{2028}\x{2029}]+ \z//x;
+
+	$string =~ s/[\x{2010}-\x{2015}-]//g;
 	$string = uc($string);
 
 	return $string =~ /\A ([0-9]{3})? [0-9]{9} [0-9X] \z/x ? $string : ()
 	}
+
 =item valid_isbn_checksum( ISBN10 | ISBN13 )
 
 This function is exportable on demand, and works for either 10
