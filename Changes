@@ -1,5 +1,8 @@
 Revision history for Perl module Business::ISBN
 
+3.015_02 2026-05-17T02:55:12Z
+	* fix a MANIFEST issue
+
 3.015_01 2026-05-17T02:15:27Z
 	* add a way to have stricter normalization of input strings
 	* add a way to normalize the input with your own code ref
