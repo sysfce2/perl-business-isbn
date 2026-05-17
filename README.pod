@@ -72,7 +72,8 @@ module and only want to run the tests without installing anything.
 =head2 Questions
 
 GitHub Discussions is available for this module for questions, ideas, and
-other feedback that might not deserve an issue: L<https://github.com/briandfoy/business-isbn/discussions>
+other feedback that might not deserve an issue:
+L<https://github.com/briandfoy/business-isbn/discussions>
 
 =head2 Source location
 
