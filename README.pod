@@ -69,6 +69,11 @@ You could install just this module manually:
 You probably don't want to do that unless you're fiddling with the
 module and only want to run the tests without installing anything.
 
+=head2 Questions
+
+GitHub Discussions is available for this module for questions, ideas, and
+other feedback that might not deserve an issue: L<https://github.com/briandfoy/business-isbn/discussions>
+
 =head2 Source location
 
 The meta data, such as the source repository and bug tracker, is in
