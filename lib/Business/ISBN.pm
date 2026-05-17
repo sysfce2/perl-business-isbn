@@ -325,20 +325,19 @@ by asking for it explicitly in the import list:
 As of version 2.010_01, you can get this text from C<< error_text >>
 so you don't have to import anything or look in package variables.
 
-The string passed as the ISBN need not be a valid ISBN as long as it
-superficially looks like one.  This allows one to use the
-C<fix_checksum()> method.  Despite the disclaimer in the discussion of
-that method, the author has found it extremely useful.  One should
-check the validity of the ISBN with C<is_valid()> rather than relying
-on the return value of the constructor.  If all one wants to do is
-check the validity of an ISBN, one can skip the object-oriented
-interface and use the C<valid_isbn_checksum()> function which is
-exportable on demand.
+The string passed as the ISBN need not be valid as long as it superficially
+looks like one.  This allows one to use the C<fix_checksum()> method.
+Despite the disclaimer in the discussion of that method, the author has
+found it extremely useful.  One should check the validity of the ISBN with
+C<is_valid()> rather than relying on the return value of the constructor.
+If all one wants to do is check the validity of an ISBN, one can skip the
+object-oriented interface and use the C<valid_isbn_checksum()> function
+which is exportable on demand.
 
-If the constructor decides it cannot create an object, it returns
-C<undef>.  It may do this if the string passed as the ISBN cannot be
-munged to the internal format, meaning that it does not even come close
-to looking like an ISBN.
+If the constructor decides it cannot create an object, it returns C<undef>.
+It may do this if the string passed as the ISBN cannot be munged to the
+internal format, meaning that it does not even come close to looking like
+an ISBN.
 
 =cut
 
