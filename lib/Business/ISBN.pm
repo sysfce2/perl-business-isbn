@@ -250,9 +250,10 @@ sub valid_isbn_checksum {
 The constructor accepts a scalar representing the ISBN, and an optional
 options hash reference (new in 3.016).
 
-Prior to 3.016, C<new> would fix up it argument by removing anything that wasn't
-an ASCII digit or an C<X>. However, that can accidentally make a string that isn't
-an ISBN into one after all the other characters are removed (e.g. C<123456789ABCD...XYZ>).
+Prior to 3.016, C<new> would fix up it argument by removing anything that
+wasn't an ASCII digit or an C<X> (see C<_common_format>). However, that can
+accidentally make a string that isn't an ISBN into one after all the other
+characters are removed (e.g. C<123456789ABCD...XYZ>).
 
 	use Business::ISBN;
 
@@ -261,10 +262,11 @@ an ISBN into one after all the other characters are removed (e.g. C<123456789ABC
 		... handle error ...
 		}
 
-With 3.016, C<new> can take an optional hash reference as a second argument.
-Set the hash key C<strict> to true to use a more restrictive way to prepare
-the string. The stricter method uses C<normalize_isbn_string>, which only strips
-whitespace and dashes. Any extra letters will remain, causing C<new> to fail:
+With 3.016, C<new> can take an optional hash reference as a second
+argument. Set the hash key C<strict> to true to use a more restrictive way
+to prepare the string. The stricter method uses C<normalize_isbn_string>,
+which only strips whitespace and dashes. Any extra letters will remain,
+causing C<new> to fail:
 
 	use Business::ISBN 3.016;
 	my $isbn = Business::ISBN->new($input_string, { strict => 1 });
@@ -272,11 +274,10 @@ whitespace and dashes. Any extra letters will remain, causing C<new> to fail:
 		... handle error ...
 		}
 
-If that's not good enough for you, 3.016 also lets you use your own code reference
-to decide how to handle the string-to-ISBN conversion. Use the C<code_ref> option;
-the code ref should return nothing (the empty list) if you cannot make the string
-into an ISBN (even if not a valid one), or the candidate ISBN string, which still
-might fail validation:
+If that's not good enough for you, 3.016 also lets you use your own code
+reference to decide how to handle the string-to-ISBN conversion. Use the
+C<normalizer> option to fix-up the ISBN argument based on your source. The
+code ref should return the string that the parser should use:
 
 	use Business::ISBN 3.016;
 
@@ -286,17 +287,22 @@ might fail validation:
 		return $candidate;
 		};
 
-	my $isbn = Business::ISBN->new($input_string, { code_ref => $code_ref });
+	my $isbn = Business::ISBN->new($input_string, { normalizer => $code_ref });
 	unless( defined $isbn ) {
 		... handle error ...
 		}
 
-No matter which method you choose (legacy, strict, or custom), the result should
-match C<(?:[0-9]{3})?[0-9]{9}[0-9X]>. If it does not, the parsing will still fail.
+For example, if you get ISBN strings like C<< <123456789X> >>, you can do
+something like this:
 
+	my $code_ref = sub { $_[0] =~ m/<(.*?)>/ ? $1 : () };
 
-The parsing uses L<Business::ISBN::Data> to determine the group code and the publisher
-code. If these data cannot be determined, it sets C<<
+No matter which method you choose (legacy, strict, or custom), the result,
+in the case of a valid ISBN, should match C<(?:[0-9]{3})?[0-9]{9}[0-9X]>.
+If the string does not match, C<new> returns the empty list immediately.
+
+The parsing uses L<Business::ISBN::Data> to determine the group code and
+the publisher code. If these data cannot be determined, it sets C<<
 $obj->error >> to something other than C<GOOD_ISBN>. An object is still
 returned and it is up to the program to check the C<< error >> method for
 one of five values or one of the C<< error_* >> methods to check for a
@@ -317,7 +323,7 @@ by asking for it explicitly in the import list:
 	use Business::ISBN qw(%ERROR_TEXT);
 
 As of version 2.010_01, you can get this text from C<< error_text >>
-so you don't have to import anything.
+so you don't have to import anything or look in package variables.
 
 The string passed as the ISBN need not be a valid ISBN as long as it
 superficially looks like one.  This allows one to use the
@@ -758,7 +764,7 @@ sub _step_article_code {
 =item png_barcode
 
 Returns image data in PNG format for the barcode for the ISBN. This
-works with ISBN-10 and ISBN-13. The ISBN-10s are automaically converted
+works with ISBN-10 and ISBN-13. The ISBN-10s are automatically converted
 to ISBN-13.
 
 This requires C<GD::Barcode::EAN13>.
