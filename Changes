@@ -1,5 +1,10 @@
 Revision history for Perl module Business::ISBN
 
+3.015_01 2026-05-17T02:15:27Z
+	* add a way to have stricter normalization of input string
+	* add a way to normalize the input with your own code ref
+	* see new() and normalize_isbn_string()
+
 3.014 2026-05-07T03:15:25Z
 	* update tests whose bad ISBNs are now good (#27)
 
