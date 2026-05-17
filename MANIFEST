@@ -24,6 +24,9 @@ t/interface.t
 t/isbn10.t
 t/isbn13.t
 t/load.t
+t/new.t
+t/normalize_isbn_string.t
+t/normalizers.t
 t/png_barcode.t
 t/pod.t
 t/pod_coverage.t
